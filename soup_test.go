@@ -185,7 +185,7 @@ func TestNewErrorReturnsInspectableError(t *testing.T) {
 
 func TestFindReturnsInspectableError(t *testing.T) {
 	r := doc.Find("bogus", "thing")
-	assert.IsType(t, Error{}, r.Error)
+	assert.IsType(t, &Error{}, r.Error)
 	assert.Equal(t, "element `bogus` with attributes `thing` not found", r.Error.Error())
 	assert.Equal(t, ErrElementNotFound, r.Error.Type)
 }

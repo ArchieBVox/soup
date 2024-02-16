@@ -437,8 +437,6 @@ checkNode:
 			}
 			goto checkNode
 		}
-		// Strip preceding and trailing whitespace and newlines
-		k.Data = strings.TrimSpace(k.Data)
 		return k.Data
 	}
 	return ""
