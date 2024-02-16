@@ -228,7 +228,7 @@ func Post(url string, bodyType string, body interface{}) (string, error) {
 	return PostWithClient(url, bodyType, body, defaultClient)
 }
 
-// PostForm is a convenience method for POST requests that
+// PostForm is a convenience method for POST requests that sends data in the form of url.Values using the default HTTP client
 func PostForm(url string, data url.Values) (string, error) {
 	return PostWithClient(url, "application/x-www-form-urlencoded", data, defaultClient)
 }
