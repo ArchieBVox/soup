@@ -1,7 +1,7 @@
-/* soup package implements a simple web scraper for Go,
-keeping it as similar as possible to BeautifulSoup
+/*
+Package soup package implements a simple web scraper for Go,
+keeping it as similar as possible to BeautifulSoup.
 */
-
 package soup
 
 import (
@@ -9,11 +9,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	netURL "net/url"
 	"regexp"
 	"strings"
 
@@ -63,15 +61,15 @@ func (se Error) Error() string {
 	return se.msg
 }
 
-func newError(t ErrorType, msg string) Error {
-	return Error{Type: t, msg: msg}
+func newError(t ErrorType, msg string) *Error {
+	return &Error{Type: t, msg: msg}
 }
 
 // Root is a structure containing a pointer to an html node, the node value, and an error variable to return an error if one occurred
 type Root struct {
 	Pointer   *html.Node
 	NodeValue string
-	Error     error
+	Error     *Error
 }
 
 // Init a new HTTP client for use when the client doesn't want to use their own.
@@ -129,14 +127,14 @@ func GetWithClient(url string, client *http.Client) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	bytes, err := ioutil.ReadAll(utf8Body)
+	bs, err := io.ReadAll(utf8Body)
 	if err != nil {
 		if debug {
 			panic("Unable to read the response body")
 		}
 		return "", newError(ErrReadingResponse, "unable to read the response body")
 	}
-	return string(bytes), nil
+	return string(bs), nil
 }
 
 // setHeadersAndCookies helps build a request
@@ -169,7 +167,7 @@ func getBodyReader(rawBody interface{}) (io.Reader, error) {
 				return nil, newError(ErrMarshallingPostRequest, "couldn't serialize map of strings to JSON.")
 			}
 			bodyReader = bytes.NewBuffer(jsonBody)
-		case netURL.Values:
+		case url.Values:
 			bodyReader = strings.NewReader(body.Encode())
 		case []byte: //expects JSON format
 			bodyReader = bytes.NewBuffer(body)
@@ -197,7 +195,8 @@ func PostWithClient(url string, bodyType string, body interface{}, client *http.
 
 	if debug {
 		// Save a copy of this request for debugging.
-		requestDump, err := httputil.DumpRequest(req, true)
+		var requestDump []byte
+		requestDump, err = httputil.DumpRequest(req, true)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -214,14 +213,14 @@ func PostWithClient(url string, bodyType string, body interface{}, client *http.
 		return "", newError(ErrCreatingPostRequest, "couldn't perform POST request to "+url)
 	}
 	defer resp.Body.Close()
-	bytes, err := ioutil.ReadAll(resp.Body)
+	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
 		if debug {
 			panic("Unable to read the response body")
 		}
 		return "", newError(ErrReadingResponse, "unable to read the response body")
 	}
-	return string(bytes), nil
+	return string(bs), nil
 }
 
 // Post returns the HTML returned by the url as a string using the default HTTP client
@@ -256,6 +255,8 @@ func HTMLParse(s string) Root {
 			r = r.NextSibling
 		case html.CommentNode:
 			r = r.NextSibling
+		default:
+			continue
 		}
 	}
 	return Root{Pointer: r, NodeValue: r.Data}
@@ -266,7 +267,7 @@ func HTMLParse(s string) Root {
 // and returns a struct with a pointer to it
 func (r Root) Find(args ...string) Root {
 	temp, ok := findOnce(r.Pointer, args, false, false)
-	if ok == false {
+	if !ok {
 		if debug {
 			panic("Element `" + args[0] + "` with attributes `" + strings.Join(args[1:], " ") + "` not found")
 		}
@@ -298,7 +299,7 @@ func (r Root) FindAll(args ...string) []Root {
 // only if all the values of the provided attribute are an exact match
 func (r Root) FindStrict(args ...string) Root {
 	temp, ok := findOnce(r.Pointer, args, false, true)
-	if ok == false {
+	if !ok {
 		if debug {
 			panic("Element `" + args[0] + "` with attributes `" + strings.Join(args[1:], " ") + "` not found")
 		}
@@ -436,6 +437,8 @@ checkNode:
 			}
 			goto checkNode
 		}
+		// Strip preceding and trailing whitespace and newlines
+		k.Data = strings.TrimSpace(k.Data)
 		return k.Data
 	}
 	return ""
@@ -481,7 +484,10 @@ func matchElementName(n *html.Node, name string) bool {
 
 // Using depth first search to find the first occurrence and return
 func findOnce(n *html.Node, args []string, uni bool, strict bool) (*html.Node, bool) {
-	if uni == true {
+	if n == nil {
+		return nil, false
+	}
+	if uni {
 		if n.Type == html.ElementNode && matchElementName(n, args[0]) {
 			if len(args) > 1 && len(args) < 4 {
 				for i := 0; i < len(n.Attr); i++ {
@@ -501,7 +507,7 @@ func findOnce(n *html.Node, args []string, uni bool, strict bool) (*html.Node, b
 	uni = true
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
 		p, q := findOnce(c, args, true, strict)
-		if q != false {
+		if q {
 			return p, q
 		}
 	}
@@ -510,10 +516,13 @@ func findOnce(n *html.Node, args []string, uni bool, strict bool) (*html.Node, b
 
 // Using depth first search to find all occurrences and return
 func findAllofem(n *html.Node, args []string, strict bool) []*html.Node {
+	if n == nil {
+		return nil
+	}
 	var nodeLinks = make([]*html.Node, 0, 10)
 	var f func(*html.Node, []string, bool)
 	f = func(n *html.Node, args []string, uni bool) {
-		if uni == true {
+		if uni {
 			if n.Type == html.ElementNode && matchElementName(n, args[0]) {
 				if len(args) > 1 && len(args) < 4 {
 					for i := 0; i < len(n.Attr); i++ {
@@ -563,7 +572,7 @@ func getKeyValue(attributes []html.Attribute) map[string]string {
 	var keyvalues = make(map[string]string)
 	for i := 0; i < len(attributes); i++ {
 		_, exists := keyvalues[attributes[i].Key]
-		if exists == false {
+		if !exists {
 			keyvalues[attributes[i].Key] = attributes[i].Val
 		}
 	}

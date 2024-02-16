@@ -2,7 +2,8 @@ package soup
 
 import (
 	"bytes"
-	"io/ioutil"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -89,6 +90,13 @@ func TestFind(t *testing.T) {
 	// Find("") with attributes
 	actual = doc.Find("", "id", "4").Text()
 	assert.Equal(t, "Last one", actual)
+}
+
+func TestFindOnceReturnsNil(t *testing.T) {
+	// FindOnce()
+	tag := "some tag"
+	actual := doc.Find(tag)
+	assert.Equal(t, fmt.Sprintf("element `%s` with attributes `%s` not found", tag, ""), actual.Error.Error())
 }
 
 func TestFindNextPrevElement(t *testing.T) {
@@ -179,7 +187,7 @@ func TestFindReturnsInspectableError(t *testing.T) {
 	r := doc.Find("bogus", "thing")
 	assert.IsType(t, Error{}, r.Error)
 	assert.Equal(t, "element `bogus` with attributes `thing` not found", r.Error.Error())
-	assert.Equal(t, ErrElementNotFound, r.Error.(Error).Type)
+	assert.Equal(t, ErrElementNotFound, r.Error.Type)
 }
 
 // Similar test: https://github.com/hashicorp/go-retryablehttp/blob/master/client_test.go#L616
@@ -197,7 +205,7 @@ func TestClient_Post(t *testing.T) {
 		}
 
 		// Check the payload
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			t.Fatalf("err: %s", err)
 		}
@@ -251,7 +259,7 @@ func TestClient_PostForm(t *testing.T) {
 		}
 
 		// Check the payload
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			t.Fatalf("err: %s", err)
 		}
@@ -290,5 +298,4 @@ func TestClient_PostForm(t *testing.T) {
 func TestHTML(t *testing.T) {
 	li := doc.Find("ul").Find("li")
 	assert.Equal(t, "<li>To a <a href=\"hello.jsp\">JSP page</a> right?</li>", li.HTML())
-
 }
