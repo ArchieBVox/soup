@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/anaskhan96/soup"
+	"github.com/ByteSizedMarius/soup"
 )
 
 func main() {
@@ -22,7 +22,7 @@ func main() {
 	}
 	xkcdSoup := soup.HTMLParse(xkcd)
 	links := xkcdSoup.Find("div", "id", "linkz")
-	if links.Error != nil && links.Error.(soup.Error).Type == soup.ErrElementNotFound {
+	if links.Error != nil && links.Error.Type == soup.ErrElementNotFound {
 		log.Printf("Element not found: %v", links.Error)
 	}
 	// These error types were introduced in version 1.2.0, but just checking for err still works:

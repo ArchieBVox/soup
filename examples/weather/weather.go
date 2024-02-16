@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/anaskhan96/soup"
+	"github.com/ByteSizedMarius/soup"
 )
 
 func main() {

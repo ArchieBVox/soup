@@ -1,7 +1,9 @@
 # soup
-[![Build Status](https://travis-ci.org/anaskhan96/soup.svg?branch=master)](https://travis-ci.org/anaskhan96/soup)
-[![GoDoc](https://godoc.org/github.com/anaskhan96/soup?status.svg)](https://pkg.go.dev/github.com/anaskhan96/soup)
-[![Go Report Card](https://goreportcard.com/badge/github.com/anaskhan96/soup)](https://goreportcard.com/report/github.com/anaskhan96/soup)
+[![GoDoc](https://godoc.org/github.com/ByteSizedMarius/soup?status.svg)](https://pkg.go.dev/github.com/ByteSizedMarius/soup)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ByteSizedMarius/soup)](https://goreportcard.com/report/github.com/ByteSizedMarius/soup)
+
+Forked from [anaskhan96/soup](https://github.com/anaskhan96/soup) due to it not being actively maintained.
+Original Readme below:
 
 **Web Scraper in Go, similar to BeautifulSoup**
 
@@ -52,19 +54,19 @@ A detailed text explaination of the error can be accessed using the `Error()` fu
 ## Installation
 Install the package using the command
 ```bash
-go get github.com/anaskhan96/soup
+go get github.com/ByteSizedMarius/soup
 ```
 
 ## Example
 An example code is given below to scrape the "Comics I Enjoy" part (text and its links) from [xkcd](https://xkcd.com).
 
-[More Examples](https://github.com/anaskhan96/soup/tree/master/examples)
+[More Examples](https://github.com/ByteSizedMarius/soup/tree/master/examples)
 ```go
 package main
 
 import (
 	"fmt"
-	"github.com/anaskhan96/soup"
+	"github.com/ByteSizedMarius/soup"
 	"os"
 )
 
