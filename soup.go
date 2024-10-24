@@ -489,39 +489,86 @@ func matchElementName(n *html.Node, name string) bool {
 }
 
 // Using depth first search to find the first occurrence and return
-func findOnce(n *html.Node, args []string, uni bool, strict bool) (*html.Node, bool) {
-	if n == nil {
+//
+// root node is the node to search in
+//
+// args is the arguments to search for. this can be just "div" or ("div", "class", "first") for example.
+//
+// checkCurrentNode is a flag that decides whether to check if the current node matches the search arguments.
+// this is required because it is a recursive function, and we don't want to check if the initial node matches, just it's descendants.
+//
+// strict controls whether the arguments need to be an exact match or not.
+func findOnce(root *html.Node, searchArgs []string, checkCurrentNode bool, strict bool) (*html.Node, bool) {
+
+	// todo: kann search args leer sein?
+	// kann search args >3 sein?
+
+	// Node to search in cannot be nil
+	if root == nil {
 		if debug {
 			panic("Pointer node is nil")
 		}
 		return nil, false
 	}
 
-	if uni {
-		if n.Type == html.ElementNode && matchElementName(n, args[0]) {
-			if len(args) > 1 && len(args) < 4 {
-				for i := 0; i < len(n.Attr); i++ {
-					attr := n.Attr[i]
-					searchAttrName := args[1]
-					searchAttrVal := args[2]
-					if (strict && attributeAndValueEquals(attr, searchAttrName, searchAttrVal)) ||
-						(!strict && attributeContainsValue(attr, searchAttrName, searchAttrVal)) {
-						return n, true
-					}
-				}
-			} else if len(args) == 1 {
-				return n, true
+	if checkCurrentNode {
+
+		// First check if this is an HTML element (not text/comment) and its name matches what we're looking for
+		if root.Type == html.ElementNode && matchElementName(root, searchArgs[0]) {
+
+			// Check if we're searching with attribute criteria (e.g., <div class="foo">)
+			// If we are not, we can return the node now since the element name matches, and we weren't looking for specific attributes
+			if !isSearchingWithAttributes(searchArgs) {
+				return root, true
 			}
+
+			// Otherwise, we need to check if the node's attributes match our search criteria
+			if hasMatchingAttribute(root, searchArgs[1], searchArgs[2], strict) {
+				return root, true
+			}
+
+			// If they don't, we still continue recursively searching the children
 		}
+
+		// If element name doesn't match, continue searching children
 	}
-	uni = true
-	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		p, q := findOnce(c, args, true, strict)
-		if q {
-			return p, q
+
+	// Recursively search through all children
+	childNode := root.FirstChild
+	for childNode != nil {
+
+		// Recursively search this child and its descendants
+		matchingNode, found := findOnce(childNode, searchArgs, true, strict)
+		if found {
+			return matchingNode, found
 		}
+
+		childNode = childNode.NextSibling
 	}
+
 	return nil, false
+}
+
+// isSearchingWithAttributes checks if the search includes attribute criteria.
+// args must contain exactly 3 elements: [element name, attribute name, attribute value]
+// For example: ["div", "class", "foo"] to find <div class="foo">
+func isSearchingWithAttributes(args []string) bool {
+	return len(args) == 3 // name, attribute name, attribute value
+}
+
+// hasMatchingAttribute checks if the HTML node has an attribute matching the search criteria.
+// If strict is true, the attribute value must match exactly.
+// If strict is false, the attribute value can be part of a space-separated list
+// (e.g., in class="foo bar", searching for "foo" would match).
+// Returns true if a matching attribute is found.
+func hasMatchingAttribute(node *html.Node, attrName, attrValue string, strict bool) bool {
+	for _, attr := range node.Attr {
+		if (strict && attributeAndValueEquals(attr, attrName, attrValue)) ||
+			(!strict && attributeContainsValue(attr, attrName, attrValue)) {
+			return true
+		}
+	}
+	return false
 }
 
 // Using depth first search to find all occurrences and return
