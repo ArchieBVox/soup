@@ -498,10 +498,15 @@ func matchElementName(n *html.Node, name string) bool {
 // this is required because it is a recursive function, and we don't want to check if the initial node matches, just it's descendants.
 //
 // strict controls whether the arguments need to be an exact match or not.
+//
+// todo: error handling is not great.
 func findOnce(root *html.Node, searchArgs []string, checkCurrentNode bool, strict bool) (*html.Node, bool) {
-
-	// todo: kann search args leer sein?
-	// kann search args >3 sein?
+	if len(searchArgs) < 1 || len(searchArgs) > 3 {
+		if debug {
+			panic("Invalid number of search arguments")
+		}
+		return nil, false
+	}
 
 	// Node to search in cannot be nil
 	if root == nil {
