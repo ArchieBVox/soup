@@ -299,3 +299,15 @@ func TestHTML(t *testing.T) {
 	li := doc.Find("ul").Find("li")
 	assert.Equal(t, "<li>To a <a href=\"hello.jsp\">JSP page</a> right?</li>", li.HTML())
 }
+
+func TestBuildClientFromProxyAddresss(t *testing.T) {
+	_, err := BuildClientFromProxyAddress("http://127.0.0.1:80")
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	_, err = BuildClientFromProxyAddress("socks5://127.0.0.1:80")
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+}

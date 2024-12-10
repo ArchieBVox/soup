@@ -17,6 +17,7 @@ import (
 
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/charset"
+	"golang.org/x/net/proxy"
 )
 
 // ErrorType defines types of errors that are possible from soup
@@ -45,6 +46,12 @@ const (
 	ErrMarshallingPostRequest
 	// ErrReadingResponse will be returned if there was an error reading the response to our get request
 	ErrReadingResponse
+	// ErrUnableToParseProxyAddress will be returned if there was an error parsing the proxy address
+	ErrUnableToParseProxyAddress
+	// ErrUnableToCreateDailer will be returned if there was an error creating a dailer from the proxy address
+	ErrUnableToCreateDailer
+	// ErrUnsupportedProxyScheme will be returned if the proxy address uses an unsupported proxy scheme
+	ErrUnsupportedProxyScheme
 )
 
 // Error allows easier introspection on the type of error returned.
@@ -88,6 +95,53 @@ var (
 // SetClient sets the defaultClient
 func SetClient(client *http.Client) {
 	defaultClient = client
+}
+
+// BuildClientFromProxyAddress builds a client using the given proxy address
+// Proxy addresses can take the following forms:
+//   - http://address:port
+//   - socks5://address:port
+//   - socks5://username:password@address:port
+func BuildClientFromProxyAddress(proxyAddress string) (*http.Client, error) {
+	var proxyClient *http.Client
+	proxyParsed, err := url.Parse(proxyAddress)
+	if err != nil {
+		if debug {
+			panic("Couldn't parse proxy address: " + proxyAddress)
+		}
+		return nil, newError(ErrUnableToParseProxyAddress, "couldn't parse proxy address: "+proxyAddress)
+	}
+
+	switch proxyParsed.Scheme {
+	case "socks5":
+		dialer, err := proxy.FromURL(proxyParsed, proxy.Direct)
+		if err != nil {
+			if debug {
+				panic("Couldn't create dailer from proxy address " + proxyAddress)
+			}
+			return nil, newError(ErrUnableToCreateDailer, "couldn't create dailer from proxy address: "+proxyAddress)
+		}
+
+		proxyClient = &http.Client{
+			Transport: &http.Transport{
+				Proxy: http.ProxyFromEnvironment,
+				Dial:  dialer.Dial,
+			},
+		}
+	case "http", "https":
+		proxyClient = &http.Client{
+			Transport: &http.Transport{
+				Proxy: http.ProxyURL(proxyParsed),
+			},
+		}
+	default:
+		if debug {
+			panic(fmt.Sprintf("Proxy scheme %v is unsupported", proxyParsed.Scheme))
+		}
+		return nil, newError(ErrUnsupportedProxyScheme, fmt.Sprintf("proxy scheme %v is unsupported", proxyParsed.Scheme))
+	}
+
+	return proxyClient, nil
 }
 
 // SetDebug sets the debug status

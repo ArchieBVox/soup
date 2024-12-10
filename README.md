@@ -35,6 +35,7 @@ func FullText() string {} // Full text inside a nested/non-nested tag returned
 func SetClient(*http.Client) {} // Sets the default HTTP client to a custom client, useful for routing all HTTP requests through a proxy 
 func SetDebug(bool) {} // Sets the debug mode to true or false; false by default
 func HTML() {} // HTML returns the HTML code for the specific element
+func BuildClientFromProxy(string) *http.Client {} // Builds a client using the given proxy address
 ```
 
 `Root` is a struct, containing three fields :
