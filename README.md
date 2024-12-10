@@ -32,6 +32,7 @@ func Children() []Root {} // Find all direct children of this DOM element
 func Attrs() map[string]string {} // Map returned with all the attributes of the Element as lookup to their respective values
 func Text() string {} // Full text inside a non-nested tag returned, first half returned in a nested one
 func FullText() string {} // Full text inside a nested/non-nested tag returned
+func SetClient(*http.Client) {} // Sets the default HTTP client to a custom client, useful for routing all HTTP requests through a proxy 
 func SetDebug(bool) {} // Sets the debug mode to true or false; false by default
 func HTML() {} // HTML returns the HTML code for the specific element
 ```

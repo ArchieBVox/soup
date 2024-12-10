@@ -85,6 +85,11 @@ var (
 	Cookies = make(map[string]string)
 )
 
+// SetClient sets the defaultClient
+func SetClient(client *http.Client) {
+	defaultClient = client
+}
+
 // SetDebug sets the debug status
 // Setting this to true causes the panics to be thrown and logged onto the console.
 // Setting this to false causes the errors to be saved in the Error field in the returned struct.
